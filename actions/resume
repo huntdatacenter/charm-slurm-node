@@ -1,0 +1,8 @@
+#!/bin/bash
+
+set +ex
+
+HOSTNAME=$(/bin/hostname -s)
+
+scontrol update NodeName=$HOSTNAME State=RESUME
+status-set 'active' 'Slurm node resumed'

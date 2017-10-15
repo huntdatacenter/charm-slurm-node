@@ -1,0 +1,8 @@
+drain:
+  description: Drain the Slurm Node.
+  params:
+    reason:
+      type: string
+      description: The reason for draining.
+resume:
+  description: Resume the Slurm node.

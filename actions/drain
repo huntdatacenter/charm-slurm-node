@@ -1,0 +1,15 @@
+#!/bin/bash
+
+set +ex
+
+HOSTNAME=$(/bin/hostname -s)
+REASON=$(action-get reason)
+
+if [ -z "$REASON" ];
+  then
+    scontrol update NodeName=$HOSTNAME Reason="Set to drain by Juju Action" State=DRAIN
+  else
+    scontrol update NodeName=$HOSTNAME Reason="$REASON" State=DRAIN
+fi
+
+status-set 'waiting' 'Slurm node set to DRAIN'
