@@ -17,6 +17,8 @@ install:
   # Install packages
   - sudo apt-get -y install lxd snapd
   - sudo snap install juju --classic --channel=$JUJU_CHANNEL
+  # Install candidate version of charm due to https://github.com/juju/charm-tools/issues/356
+  - sudo snap install charm --candidate
   - pip install tox
 before_script:
   # Setup LXD
@@ -32,6 +34,6 @@ before_script:
                        juju bootstrap localhost'
 script:
   - sudo su travis -c 'export PATH=$PATH:/snap/bin &&
-                       make test'
+                       make smoke-test'
 notifications:
   email: false

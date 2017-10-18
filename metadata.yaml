@@ -1,13 +1,20 @@
 name: slurm-node
 summary: <Fill in summary here>
-maintainer: zeestrat <zeestrat@vagrant.vm>
+maintainer: Sandor Zeestraten <sandor.zeestraten@ntnu.no>
 description: |
   <Multi-line description here>
 tags:
-  - misc
+  - slurm
 subordinate: false
 series:
   - xenial
 requires:
   slurm-cluster:
     interface: slurm-cluster
+storage:
+  scratch:
+    type: filesystem
+    description: Scratch storage for Slurm node
+    location: /scratch
+    multiple:
+      range: 0-1

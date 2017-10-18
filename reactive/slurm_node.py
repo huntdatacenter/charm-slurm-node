@@ -1,3 +1,4 @@
+from os import chmod
 from socket import gethostname
 
 from charms.slurm.helpers import MUNGE_SERVICE
@@ -16,6 +17,7 @@ from charmhelpers.core.host import service_restart
 from charmhelpers.core.host import service_running
 from charmhelpers.core.hookenv import config
 from charmhelpers.core.hookenv import status_set
+from charmhelpers.core.hookenv import storage_get
 
 from charms.reactive import hook
 from charms.reactive import when
@@ -85,6 +87,12 @@ def node_ready(cluster):
 def config_changed():
     remove_state('slurm-node.configured')
     remove_state('slurm-node.info.sent')
+
+
+@hook('scratch-storage-attached')
+def setup_storage():
+    storage = storage_get()
+    chmod(path=storage.get('location'), mode=0o777)
 
 
 @when_file_changed(SLURM_CONFIG_PATH)
