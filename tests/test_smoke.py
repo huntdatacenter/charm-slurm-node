@@ -10,7 +10,7 @@ async def test_deploy():
     CHARM_NAME = os.environ.get('CHARM_NAME')
     CHARM_BUILD_DIR = os.environ.get('CHARM_BUILD_DIR')
     # Generate paths to locally built charms
-    CHARM_PATH = os.path.join(charm_build_dir, charm_name)
+    CHARM_PATH = os.path.join(CHARM_BUILD_DIR, CHARM_NAME)
 
     model = Model()
     print('Connecting to model')

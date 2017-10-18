@@ -1,28 +1,51 @@
-sudo: required
 dist: trusty
+sudo: required
 language: python
-env:
-  - JUJU_CHANNEL=stable
-  - JUJU_CHANNEL=candidate
-  - JUJU_CHANNEL=beta
+python: 3.5
+jobs:
+  include:
+    # Linter
+    - stage: lint
+      sudo: false
+      install: pip install tox
+      script: make lint
+
+    # Smoke tests
+    - stage: smoke tests
+      script: make smoke-test
+      env: JUJU_CHANNEL=stable
+    - stage: smoke tests
+      script: make smoke-test
+      env: JUJU_CHANNEL=candidate
+    - stage: smoke tests
+      script: make smoke-test
+      env: JUJU_CHANNEL=beta
+
+    # Integration tests
+    - stage: integration tests
+      script: make integration-test
+      env: JUJU_CHANNEL=stable
+    - stage: integration tests
+      script: make integration-test
+      env: JUJU_CHANNEL=candidate
+    - stage: integration tests
+      script: make integration-test
+      env: JUJU_CHANNEL=beta
 matrix:
   allow_failures:
     - env: JUJU_CHANNEL=candidate
     - env: JUJU_CHANNEL=beta
-before_install:
+install:
   # Add repositories
   - sudo add-apt-repository -y ppa:ubuntu-lxc/lxd-stable
   - sudo apt-get -qq update
-install:
   # Install packages
-  - sudo apt-get -y install lxd snapd
+  - sudo apt-get -y install lxd snapd python-tox
   - sudo snap install juju --classic --channel=$JUJU_CHANNEL
   # Install candidate version of charm due to https://github.com/juju/charm-tools/issues/356
   - sudo snap install charm --candidate
-  - pip install tox
-before_script:
   # Setup LXD
-  - sudo service lxd restart
+  - sudo service lxd start
   - sudo lxd init --auto
   - sudo usermod -a -G lxd travis
   # Changing user as a workaround for https://github.com/travis-ci/travis-ci/issues/1839
@@ -30,10 +53,6 @@ before_script:
   - sudo su travis -c 'lxc network create lxdbr0'
   - sudo su travis -c 'lxc network attach-profile lxdbr0 default eth0'
   # Bootstrap Juju. Need to export path to snap because of workaround above
-  - sudo su travis -c 'export PATH=$PATH:/snap/bin &&
-                       juju bootstrap localhost'
-script:
-  - sudo su travis -c 'export PATH=$PATH:/snap/bin &&
-                       make smoke-test'
+  - sudo su travis -c 'export PATH=$PATH:/snap/bin && juju bootstrap localhost'
 notifications:
   email: false
