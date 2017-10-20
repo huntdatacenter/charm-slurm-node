@@ -6,5 +6,6 @@ __pycache__/
 .coverage
 .venv
 .local
+.cache
 builds/
 deps/

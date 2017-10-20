@@ -2,12 +2,22 @@ dist: trusty
 sudo: required
 language: python
 python: 3.5
+matrix:
+  allow_failures:
+    - env: JUJU_CHANNEL=candidate
+    - env: JUJU_CHANNEL=beta
+stages:
+  - lint
+  - smoke tests
+  - name: push to charm store
+    if: branch = master
 jobs:
   include:
     # Linter
     - stage: lint
       sudo: false
       install: pip install tox
+      before_script: skip
       script: make lint
 
     # Smoke tests
@@ -21,22 +31,26 @@ jobs:
       script: make smoke-test
       env: JUJU_CHANNEL=beta
 
-    # Integration tests
-    - stage: integration tests
-      script: make integration-test
-      env: JUJU_CHANNEL=stable
-    - stage: integration tests
-      script: make integration-test
-      env: JUJU_CHANNEL=candidate
-    - stage: integration tests
-      script: make integration-test
-      env: JUJU_CHANNEL=beta
-matrix:
-  allow_failures:
-    - env: JUJU_CHANNEL=candidate
-    - env: JUJU_CHANNEL=beta
+    # Push to charm store
+    - stage: push to charm store
+      before_script:
+        # Handle charm store tokens. See bugs below for why this is the way
+        # https://github.com/juju/charmstore-client/issues/145
+        # https://github.com/juju/charmstore-client/issues/146
+        - /snap/bin/charm version
+        # Make sure /snap/.local/share/juju dir is created
+        - mkdir -p ~/snap/charm/current/.local/share/juju
+        # Setup token
+        - echo $CHARM_STORE_TOKEN | base64 --decode > ~/snap/charm/current/.local/share/juju/store-usso-token
+        # Login to charm store
+        - /snap/bin/charm login
+        - /snap/bin/charm whoami
+      script: make push
+      env:
+        # CHARM_STORE_TOKEN
+        secure: "CPKQ7m/8jCiChEsBgTIacopx4m8FQDvMqaobsiatxMaZh5HHKyMLIzp+qJouhj7H6pRkcxq3ZXfqQVR3mfrNxB8th48I+MgCZWZHDqwxqNNk2txp/IcnGXyG75adDzR14gBtK9hqL0eUmjT93oa65AwNRAEx3BCO46zjKBlzfPzmJg4PhdstUH1Hw35obPHUW7sgFL5BLzyVJOuhV0imDBoxnks07pS6UQghCeZhnTS+w1e9pu/UgqKfdo89t0znKUqPznF/WiOwPhg2ET2pHK1o8oM6qJMfBPQpLdALReO+wUd66hKl4hy+5DHwVU0EZclUtgYIhOGrjb5DPtvgIZgrcvZyWPigdqQ0WL3Z2Bqg1j/T6JHAZ3UjuXVB0ictDVjDdMCEJE4S6Kd42Zyw/0o+AnIyrXzJVRcplrcrt5EpKeHgqrEUt3u0wcoFqlM579C+VW3Y3qy9Th35ThfoRkkq72H5aOReFWtPdsny7D86gXlVBc7UzKAgVOaZyo4UfDv1f7vxqdiv+DHFeX2peyzUwiHYCj2Ay99WMzweNO4Y8RaN30+28vlsPVO9PElfwwnx0rg89MrGqo6s199GCQZ0Ui16LvEz/9JwoD585Sg50jsD6C/qI/Q5+1PN1mvQkLum1cT0YFN790qGEhILeAi24TfUvhot7PiBDPTXlmg="
 install:
-  # Add repositories
+  # Add lxd repository as travis only has 14.04
   - sudo add-apt-repository -y ppa:ubuntu-lxc/lxd-stable
   - sudo apt-get -qq update
   # Install packages
@@ -52,7 +66,8 @@ install:
   # See http://fnordahl.com/2017/04/08/continuous-deployment-testing-of-github-hosted-code/
   - sudo su travis -c 'lxc network create lxdbr0'
   - sudo su travis -c 'lxc network attach-profile lxdbr0 default eth0'
-  # Bootstrap Juju. Need to export path to snap because of workaround above
-  - sudo su travis -c 'export PATH=$PATH:/snap/bin && juju bootstrap localhost'
+before_script:
+  # Bootstrap juju
+  - sudo su travis -c '/snap/binjuju bootstrap localhost'
 notifications:
   email: false
